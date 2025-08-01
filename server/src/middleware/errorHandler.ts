@@ -1,22 +1,29 @@
 import { Request, Response, NextFunction } from "express";
-import { ApifyClientError } from "apify-client";
 
 export const errorHandler = (
-  err: Error,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  console.error(err); // Log error for debugging
-  if (err instanceof ApifyClientError && err.statusCode === 401) {
+  console.error("Error:", err); // Log error for debugging
+
+  // Check for Apify authentication issue
+  if (err?.statusCode === 401) {
     return res.status(401).json({
       message: "Apify authentication failed. The API key is likely invalid.",
     });
   }
-  if (err.message === "NOT_AUTHENTICATED") {
-    return res
-      .status(401)
-      .json({ message: "Not authenticated. Please provide an API key first." });
+
+  // Check for custom NOT_AUTHENTICATED error
+  if (err?.message === "NOT_AUTHENTICATED") {
+    return res.status(401).json({
+      message: "Not authenticated. Please provide an API key first.",
+    });
   }
-  return res.status(500).json({ message: "An unexpected error occurred." });
+
+  // Generic error fallback
+  return res.status(500).json({
+    message: err?.message || "An unexpected error occurred.",
+  });
 };

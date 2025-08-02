@@ -1,11 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { ApifyClient } from "apify-client";
 
-let userApifyClient: ApifyClient | null = null;
-
-const checkAuth = () => {
-  if (!userApifyClient) throw new Error("NOT_AUTHENTICATED");
-  return userApifyClient;
+// This helper function creates a client on-demand from the request header
+const getClientFromRequest = (req: Request): ApifyClient => {
+  const apiKey = req.header("x-apify-key");
+  if (!apiKey) {
+    // This will be caught by our error handler
+    throw new Error("NOT_AUTHENTICATED");
+  }
+  return new ApifyClient({ token: apiKey });
 };
 
 export const verifyKey = async (
@@ -14,10 +17,8 @@ export const verifyKey = async (
   next: NextFunction
 ) => {
   try {
-    const { apiKey } = req.body;
-    const testClient = new ApifyClient({ token: apiKey });
-    await testClient.user("me").get();
-    userApifyClient = testClient;
+    const client = getClientFromRequest(req);
+    await client.user("me").get();
     res.status(200).json({ message: "API key verified successfully." });
   } catch (err) {
     next(err);
@@ -30,7 +31,7 @@ export const listActors = async (
   next: NextFunction
 ) => {
   try {
-    const client = checkAuth();
+    const client = getClientFromRequest(req);
     const actorList = await client.actors().list();
     res.status(200).json(actorList.items);
   } catch (err) {
@@ -44,9 +45,8 @@ export const getActorSchema = async (
   next: NextFunction
 ) => {
   try {
-    const client = checkAuth();
+    const client = getClientFromRequest(req);
     const { actorId } = req.params;
-
     const actor = await client.actor(actorId).get();
     const buildId = actor?.taggedBuilds?.latest?.buildId;
 
@@ -57,14 +57,12 @@ export const getActorSchema = async (
     }
 
     const buildDetails = await client.build(buildId).get();
-
-    const inputSchemaString = buildDetails.inputSchema;
-
-    if (!inputSchemaString) {
+    if (!buildDetails || !buildDetails.inputSchema) {
       return res
         .status(404)
         .json({ message: "No input schema found in the build details." });
     }
+    const inputSchemaString = buildDetails.inputSchema;
 
     const parsedSchema = JSON.parse(inputSchemaString);
     res.status(200).json({ inputSchema: parsedSchema });
@@ -79,7 +77,7 @@ export const runActor = async (
   next: NextFunction
 ) => {
   try {
-    const client = checkAuth();
+    const client = getClientFromRequest(req);
     const { actorId } = req.params;
     const run = await client.actor(actorId).call(req.body);
     const { items } = await client.dataset(run.defaultDatasetId).listItems();

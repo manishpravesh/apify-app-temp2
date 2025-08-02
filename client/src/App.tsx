@@ -4,16 +4,16 @@ import { AuthForm } from "./components/AuthForm";
 import { Layout } from "./components/Layout";
 import { Loader2 } from "lucide-react";
 
-// ✨ LAZY LOADING: This tells React to only load ActorRunner when it's needed.
+// This tells React to only load the ActorRunner component's code when it's first needed
 const ActorRunner = React.lazy(() =>
   import("./components/ActorRunner").then((module) => ({
     default: module.ActorRunner,
   }))
 );
 
-// A simple loading placeholder for the lazy-loaded component
+// A simple loading spinner to show while the ActorRunner code is being downloaded
 const FullPageLoader = () => (
-  <div className="flex items-center justify-center h-full">
+  <div className="flex items-center justify-center flex-1">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
   </div>
 );
@@ -21,11 +21,12 @@ const FullPageLoader = () => (
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // This function decides which component to show based on the authentication state
   const renderContent = () => {
     if (!isAuthenticated) {
       return <AuthForm onSuccess={() => setIsAuthenticated(true)} />;
     }
-    // Suspense is a React feature that waits for the lazy component to load
+    // Suspense waits for the lazy-loaded component to download before rendering it
     return (
       <Suspense fallback={<FullPageLoader />}>
         <ActorRunner />
@@ -34,7 +35,6 @@ function App() {
   };
 
   return (
-    // Wrap the entire app in the new Layout component
     <Layout>
       <Toaster position="bottom-right" reverseOrder={false} />
       <div className="flex flex-col items-center flex-1 p-4">

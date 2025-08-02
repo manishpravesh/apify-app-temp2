@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiClient } from "@/lib/api";
+import { apiClient, setAuthToken } from "@/lib/api"; // Import setAuthToken
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,10 +28,15 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
     ).value;
 
     try {
-      await apiClient.post("/verify-key", { apiKey });
+      // Set the token for future requests *before* verifying it
+      setAuthToken(apiKey);
+      // The body is now empty as the key is in the header
+      await apiClient.post("/verify-key", {});
       toast.success("API Key Verified!");
       onSuccess();
     } catch (err: any) {
+      // Clear the token if authentication fails
+      setAuthToken(null);
       toast.error(err.response?.data?.message || "Authentication failed.");
     } finally {
       setIsLoading(false);

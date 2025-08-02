@@ -19,8 +19,8 @@ app.use(express.json());
 app.use("/api", apifyRoutes);
 app.use(errorHandler);
 
-// Vercel will not use this, but it's needed for local development
 if (process.env.NODE_ENV !== "production") {
+  const port = process.env.PORT || 3001;
   app.listen(port, () => {
     console.log(`✅ Server is running at http://localhost:${port}`);
   });

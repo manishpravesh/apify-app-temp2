@@ -6,7 +6,7 @@ This project is a sophisticated web application that allows users to securely co
 
 The entire application was built with a focus on **technical rigor, code quality, and a polished user experience**, demonstrating a deep understanding of modern web development best practices.
 
-**🔗 Live Demo:** “[https://apify-app-temp2-jtwv-n2vstp79m-manish-praveshs-projects.vercel.app](https://apify-app-temp2-jtwv-n2vstp79m-manish-praveshs-projects.vercel.app/)”*(Replace with your Vercel link)*
+**🔗 Live Demo:** “[https://apify-app-temp2-jtwv-n2vstp79m-manish-praveshs-projects.vercel.app](https://apify-app-temp2-jtwv-n2vstp79m-manish-praveshs-projects.vercel.app/)”
 
 ## **✨ Key Features & Highlights**
 

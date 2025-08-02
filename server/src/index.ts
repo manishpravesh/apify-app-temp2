@@ -8,15 +8,23 @@ dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+// ✨ FIX: Explicitly configure CORS to allow all origins
+app.use(
+  cors({
+    origin: "*", // In a real production app, you would restrict this to your frontend's domain
+  })
+);
+
 app.use(express.json());
 app.use("/api", apifyRoutes);
 app.use(errorHandler);
 
+// Vercel will not use this, but it's needed for local development
 if (process.env.NODE_ENV !== "production") {
   app.listen(port, () => {
-    console.log(` Server is running at http://localhost:${port}`);
+    console.log(`✅ Server is running at http://localhost:${port}`);
   });
 }
 
+// Export the app for Vercel
 export default app;

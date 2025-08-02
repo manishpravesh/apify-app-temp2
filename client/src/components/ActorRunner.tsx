@@ -15,11 +15,20 @@ import {
 import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
 import { Loader2, Download } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // --- Interfaces ---
 interface Actor {
   id: string;
   name: string;
+  username: string;
 }
 interface ActorSchemaResponse {
   inputSchema: any;
@@ -28,7 +37,7 @@ interface ActorRunResult {
   results: any[];
 }
 
-// --- Results Display Component ---
+// ✨ NEW: Upgraded ResultsDisplay Component
 function ResultsDisplay({ results }: { results: any[] }) {
   const handleDownload = () => {
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
@@ -39,6 +48,15 @@ function ResultsDisplay({ results }: { results: any[] }) {
     link.download = "actor_results.json";
     link.click();
   };
+
+  // Check if results can be displayed as a table
+  const isTableData =
+    Array.isArray(results) &&
+    results.length > 0 &&
+    typeof results[0] === "object" &&
+    results[0] !== null;
+  const headers = isTableData ? Object.keys(results[0]) : [];
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -48,9 +66,39 @@ function ResultsDisplay({ results }: { results: any[] }) {
         </Button>
       </CardHeader>
       <CardContent>
-        <pre className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md overflow-auto max-h-[500px] text-sm">
-          <code>{JSON.stringify(results, null, 2)}</code>
-        </pre>
+        {isTableData ? (
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {headers.map((header) => (
+                    <TableHead key={header}>{header}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {results.map((row, rowIndex) => (
+                  <TableRow key={rowIndex}>
+                    {headers.map((header) => (
+                      <TableCell
+                        key={`${rowIndex}-${header}`}
+                        className="max-w-xs truncate"
+                      >
+                        {typeof row[header] === "object"
+                          ? JSON.stringify(row[header])
+                          : String(row[header])}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <pre className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md overflow-auto max-h-[500px] text-sm">
+            <code>{JSON.stringify(results, null, 2)}</code>
+          </pre>
+        )}
       </CardContent>
     </Card>
   );
@@ -59,7 +107,7 @@ function ResultsDisplay({ results }: { results: any[] }) {
 // --- Main ActorRunner Component ---
 export function ActorRunner() {
   const [actors, setActors] = useState<Actor[]>([]);
-  const [selectedActorId, setSelectedActorId] = useState("");
+  const [selectedActorName, setSelectedActorName] = useState("");
   const [actorSchema, setActorSchema] = useState<any | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [runResult, setRunResult] = useState<any[] | null>(null);
@@ -77,16 +125,17 @@ export function ActorRunner() {
       .finally(() => setIsLoading((prev) => ({ ...prev, actors: false })));
   }, []);
 
-  const handleActorSelect = async (actorId: string) => {
-    setSelectedActorId(actorId);
+  const handleActorSelect = async (actorName: string) => {
+    setSelectedActorName(actorName);
     setActorSchema(null);
     setRunResult(null);
     setFormData({});
     setIsLoading((prev) => ({ ...prev, schema: true }));
 
     try {
+      const urlSafeActorName = actorName.replace("/", "~");
       const response = await apiClient.get<ActorSchemaResponse>(
-        `/actors/${actorId}/schema`
+        `/actors/${urlSafeActorName}/schema`
       );
       const schema = response.data.inputSchema;
 
@@ -172,8 +221,9 @@ export function ActorRunner() {
     }
 
     try {
+      const urlSafeActorName = selectedActorName.replace("/", "~");
       const response = await apiClient.post<ActorRunResult>(
-        `/actors/${selectedActorId}/run`,
+        `/actors/${urlSafeActorName}/run`,
         formattedData
       );
       setRunResult(response.data.results);
@@ -250,13 +300,16 @@ export function ActorRunner() {
           {isLoading.actors ? (
             <p>Loading actors...</p>
           ) : (
-            <Select onValueChange={handleActorSelect} value={selectedActorId}>
+            <Select onValueChange={handleActorSelect} value={selectedActorName}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose an actor..." />
               </SelectTrigger>
               <SelectContent>
                 {actors.map((actor) => (
-                  <SelectItem key={actor.id} value={actor.id}>
+                  <SelectItem
+                    key={actor.id}
+                    value={`${actor.username}/${actor.name}`}
+                  >
                     {actor.name}
                   </SelectItem>
                 ))}

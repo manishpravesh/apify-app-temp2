@@ -41,12 +41,19 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   };
 
   return (
-    <div className="flex items-center justify-center h-full pt-20">
-      {/* ✨ UI UPGRADE: Larger card with glassy background effect */}
-      <Card className="w-full max-w-md bg-white/30 dark:bg-black/30 backdrop-blur-lg border border-white/20 shadow-lg">
+    // ✨ UI UPGRADE: The parent div now centers the card vertically in the viewport
+    <div className="flex items-center justify-center h-full w-full">
+      {/* - `w-full max-w-lg`: Makes the card noticeably larger.
+          - `bg-white/20 dark:bg-black/20`: Increases transparency for a more pronounced glass effect.
+          - `backdrop-blur-xl`: Increases the blur intensity.
+          - `border-white/30`: Makes the border slightly more visible.
+        */}
+      <Card className="w-full max-w-lg bg-white/20 dark:bg-black/20 backdrop-blur-xl border border-white/30 shadow-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl">Connect to Apify</CardTitle>
-          <CardDescription>Enter your API key to continue.</CardDescription>
+          <CardTitle className="text-3xl">Connect to Apify</CardTitle>
+          <CardDescription className="text-lg">
+            Enter your API key to unlock the Actor Runner.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">
@@ -58,11 +65,16 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
                 type="password"
                 required
                 placeholder="apify_api_..."
+                className="py-6 text-lg" // Larger text input
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Connect
+            <Button
+              type="submit"
+              className="w-full py-6 text-lg"
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+              Connect Securely
             </Button>
           </CardContent>
         </form>

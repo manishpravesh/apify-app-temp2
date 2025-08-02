@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiClient, setAuthToken } from "@/lib/api"; // Import setAuthToken
+import { apiClient, setAuthToken } from "@/lib/api";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,14 +28,11 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
     ).value;
 
     try {
-      // Set the token for future requests *before* verifying it
       setAuthToken(apiKey);
-      // The body is now empty as the key is in the header
       await apiClient.post("/verify-key", {});
       toast.success("API Key Verified!");
       onSuccess();
     } catch (err: any) {
-      // Clear the token if authentication fails
       setAuthToken(null);
       toast.error(err.response?.data?.message || "Authentication failed.");
     } finally {
@@ -45,7 +42,8 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
 
   return (
     <div className="flex items-center justify-center h-full pt-20">
-      <Card className="w-full max-w-sm">
+      {/* ✨ UI UPGRADE: Larger card with glassy background effect */}
+      <Card className="w-full max-w-md bg-white/30 dark:bg-black/30 backdrop-blur-lg border border-white/20 shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Connect to Apify</CardTitle>
           <CardDescription>Enter your API key to continue.</CardDescription>

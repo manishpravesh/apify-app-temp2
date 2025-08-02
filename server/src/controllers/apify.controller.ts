@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { ApifyClient } from "apify-client";
 
 let userApifyClient: ApifyClient | null = null;
 
-const checkAuth = (): ApifyClient => {
+const checkAuth = () => {
   if (!userApifyClient) throw new Error("NOT_AUTHENTICATED");
   return userApifyClient;
 };
@@ -11,18 +11,13 @@ const checkAuth = (): ApifyClient => {
 export const verifyKey = async (
   req: Request,
   res: Response,
-  next: Function
+  next: NextFunction
 ) => {
   try {
     const { apiKey } = req.body;
-    if (!apiKey) {
-      return res.status(400).json({ message: "API key is required." });
-    }
-
     const testClient = new ApifyClient({ token: apiKey });
     await testClient.user("me").get();
     userApifyClient = testClient;
-
     res.status(200).json({ message: "API key verified successfully." });
   } catch (err) {
     next(err);
@@ -32,7 +27,7 @@ export const verifyKey = async (
 export const listActors = async (
   req: Request,
   res: Response,
-  next: Function
+  next: NextFunction
 ) => {
   try {
     const client = checkAuth();
@@ -43,66 +38,52 @@ export const listActors = async (
   }
 };
 
-interface ActorVersionWithSchema {
-  inputSchema?: Record<string, unknown>;
-}
-
 export const getActorSchema = async (
   req: Request,
   res: Response,
-  next: Function
+  next: NextFunction
 ) => {
   try {
     const client = checkAuth();
     const { actorId } = req.params;
 
     const actor = await client.actor(actorId).get();
+    const buildId = actor?.taggedBuilds?.latest?.buildId;
 
-    const buildId = actor.taggedBuilds?.latest?.buildId;
     if (!buildId) {
       return res
         .status(404)
-        .json({ message: "No build found for this actor." });
+        .json({ message: "No 'latest' build found for this actor." });
     }
 
-    const build = await client.build(buildId).get();
+    const buildDetails = await client.build(buildId).get();
 
-    if (!build.inputSchema) {
+    const inputSchemaString = buildDetails.inputSchema;
+
+    if (!inputSchemaString) {
       return res
         .status(404)
-        .json({ message: "No input schema found for this actor." });
+        .json({ message: "No input schema found in the build details." });
     }
 
-    const parsedSchema =
-      typeof build.inputSchema === "string"
-        ? JSON.parse(build.inputSchema)
-        : build.inputSchema;
-
+    const parsedSchema = JSON.parse(inputSchemaString);
     res.status(200).json({ inputSchema: parsedSchema });
   } catch (err) {
     next(err);
   }
 };
 
-export const runActor = async (req: Request, res: Response, next: Function) => {
+export const runActor = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const client = checkAuth();
     const { actorId } = req.params;
-
-    if (!actorId) {
-      return res.status(400).json({ message: "Actor ID is required." });
-    }
-
     const run = await client.actor(actorId).call(req.body);
-
-    if (!run?.defaultDatasetId) {
-      return res
-        .status(500)
-        .json({ message: "Actor run completed, but no dataset found." });
-    }
-
     const { items } = await client.dataset(run.defaultDatasetId).listItems();
-    res.status(200).json({ runInfo: run, results: items });
+    res.status(200).json({ results: items });
   } catch (err) {
     next(err);
   }

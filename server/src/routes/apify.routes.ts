@@ -8,16 +8,9 @@ import {
 
 const router = Router();
 
-// API Key Verification
 router.post("/verify-key", verifyKey);
-
-// List all actors
 router.get("/actors", listActors);
-
-// Get actor schema
-router.get("/actors/:actorId/schema", getActorSchema); // ✅ Fixed route
-
-// Run actor
+router.get("/actors/:actorId/schema", getActorSchema);
 router.post("/actors/:actorId/run", runActor);
 
 export default router;

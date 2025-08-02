@@ -6,24 +6,30 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error("Error:", err); // Log error for debugging
+  console.error(err); // Log the full error for debugging
 
-  // Check for Apify authentication issue
-  if (err?.statusCode === 401) {
-    return res.status(401).json({
-      message: "Apify authentication failed. The API key is likely invalid.",
-    });
+  // ✨ FIX: Handle Apify's custom error object
+  if (err.type === "invalid-input" && err.message) {
+    return res.status(400).json({ message: `Invalid Input: ${err.message}` });
   }
 
-  // Check for custom NOT_AUTHENTICATED error
-  if (err?.message === "NOT_AUTHENTICATED") {
-    return res.status(401).json({
-      message: "Not authenticated. Please provide an API key first.",
-    });
+  // Handle other known Apify errors
+  if (err.statusCode === 401) {
+    return res
+      .status(401)
+      .json({
+        message: "Apify authentication failed. The API key is likely invalid.",
+      });
   }
 
-  // Generic error fallback
-  return res.status(500).json({
-    message: err?.message || "An unexpected error occurred.",
-  });
+  if (err.message === "NOT_AUTHENTICATED") {
+    return res
+      .status(401)
+      .json({ message: "Not authenticated. Please provide an API key first." });
+  }
+
+  // Generic fallback
+  return res
+    .status(500)
+    .json({ message: err.message || "An unexpected server error occurred." });
 };
